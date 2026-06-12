@@ -1,0 +1,2 @@
+# Force git to use LF line endings for the mvnw script on checkout
+backend/mvnw text eol=lf
