@@ -29,6 +29,7 @@ public class WorkerProfile {
     @Column(nullable = false, length = 150)
     private String location; // e.g., Gajuwaka
 
-    @Column(name = "photo_url", length = 255)
+    @Lob
+    @Column(name = "photo_url", columnDefinition = "LONGTEXT")
     private String photoUrl;
 }

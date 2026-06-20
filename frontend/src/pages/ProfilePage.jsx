@@ -47,6 +47,54 @@ const ProfilePage = () => {
     setError('');
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setError('Image file is too large. Please select an image under 5MB.');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.src = reader.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 300; // Resize to 300px width/height for fast loading
+          const MAX_HEIGHT = 300;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert to JPEG base64 with 70% quality to compress it to ~10-20KB
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          setFormData(prev => ({
+            ...prev,
+            photoUrl: compressedBase64
+          }));
+        };
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.experience || !formData.location) {
@@ -159,17 +207,69 @@ const ProfilePage = () => {
           <div className="form-group">
             <label className="form-label">
               <Camera size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-              Profile Photo URL (Optional)
+              Profile Photo
             </label>
-            <input
-              type="url"
-              name="photoUrl"
-              className="form-input"
-              placeholder="e.g. https://images.unsplash.com/photo-..."
-              value={formData.photoUrl}
-              onChange={handleChange}
-              disabled={loading}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '8px' }}>
+              <div 
+                style={{ 
+                  width: '64px', 
+                  height: '64px', 
+                  borderRadius: '50%', 
+                  background: 'rgba(255, 255, 255, 0.05)', 
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  overflow: 'hidden'
+                }}
+              >
+                {formData.photoUrl ? (
+                  <img src={formData.photoUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <Camera size={24} style={{ color: 'var(--text-muted)' }} />
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <input
+                  type="file"
+                  id="photo-upload"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{ display: 'none' }}
+                  disabled={loading}
+                />
+                <label 
+                  htmlFor="photo-upload" 
+                  className="btn btn-secondary" 
+                  style={{ 
+                    cursor: 'pointer', 
+                    padding: '8px 16px', 
+                    fontSize: '0.85rem',
+                    display: 'inline-block',
+                    margin: 0
+                  }}
+                >
+                  Choose from Gallery
+                </label>
+                {formData.photoUrl && (
+                  <button 
+                    type="button" 
+                    style={{ 
+                      marginLeft: '12px', 
+                      color: 'var(--danger)', 
+                      fontSize: '0.85rem',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                    onClick={() => setFormData(prev => ({ ...prev, photoUrl: '' }))}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <button type="submit" className="btn btn-accent btn-block" style={{ marginTop: '10px' }} disabled={loading}>
